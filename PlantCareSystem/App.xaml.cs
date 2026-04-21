@@ -66,6 +66,7 @@ namespace PlantCareSystem
             services.AddTransient<PlantRegistryView>();
             services.AddTransient<CareCalendarView>();
             services.AddTransient<ReportView>();
+            services.AddTransient<PlantEditWindow>();
         }
     }
 }

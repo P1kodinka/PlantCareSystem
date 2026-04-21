@@ -1,8 +1,11 @@
+E:\FINALPROJ\PlantCareSystem\PlantCareSystem\obj\Debug\net8.0-windows\PlantCareSystem.csproj.AssemblyReference.cache
 E:\FINALPROJ\PlantCareSystem\PlantCareSystem\obj\Debug\net8.0-windows\Views\CareCalendarView.baml
+E:\FINALPROJ\PlantCareSystem\PlantCareSystem\obj\Debug\net8.0-windows\Views\PlantEditWindow.baml
 E:\FINALPROJ\PlantCareSystem\PlantCareSystem\obj\Debug\net8.0-windows\Views\PlantRegistryView.baml
 E:\FINALPROJ\PlantCareSystem\PlantCareSystem\obj\Debug\net8.0-windows\Views\ReportView.baml
 E:\FINALPROJ\PlantCareSystem\PlantCareSystem\obj\Debug\net8.0-windows\MainWindow.g.cs
 E:\FINALPROJ\PlantCareSystem\PlantCareSystem\obj\Debug\net8.0-windows\Views\CareCalendarView.g.cs
+E:\FINALPROJ\PlantCareSystem\PlantCareSystem\obj\Debug\net8.0-windows\Views\PlantEditWindow.g.cs
 E:\FINALPROJ\PlantCareSystem\PlantCareSystem\obj\Debug\net8.0-windows\Views\PlantRegistryView.g.cs
 E:\FINALPROJ\PlantCareSystem\PlantCareSystem\obj\Debug\net8.0-windows\Views\ReportView.g.cs
 E:\FINALPROJ\PlantCareSystem\PlantCareSystem\obj\Debug\net8.0-windows\App.g.cs

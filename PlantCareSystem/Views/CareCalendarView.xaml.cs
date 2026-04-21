@@ -5,9 +5,13 @@ namespace PlantCareSystem.Views
 {
     public partial class CareCalendarView : UserControl
     {
-        public CareCalendarView(CalendarViewModel viewModel)
+        public CareCalendarView()
         {
             InitializeComponent();
+        }
+
+        public CareCalendarView(CalendarViewModel viewModel) : this()
+        {
             DataContext = viewModel;
         }
     }

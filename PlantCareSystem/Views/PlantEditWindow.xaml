@@ -1,0 +1,60 @@
+<Window x:Class="PlantCareSystem.Views.PlantEditWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Редактирование растения" Height="450" Width="500"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Название -->
+        <TextBlock Grid.Row="0" Text="Название *" FontWeight="Bold" Margin="0,5"/>
+        <TextBox Grid.Row="1" Text="{Binding Plant.Name, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+
+        <!-- Семейство -->
+        <TextBlock Grid.Row="2" Text="Семейство" Margin="0,5"/>
+        <TextBox Grid.Row="3" Text="{Binding Plant.Family, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+
+        <!-- Род -->
+        <TextBlock Grid.Row="4" Text="Род" Margin="0,5"/>
+        <TextBox Grid.Row="5" Text="{Binding Plant.Genus, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+
+        <!-- Вид -->
+        <TextBlock Grid.Row="6" Text="Вид" Margin="0,5"/>
+        <TextBox Grid.Row="7" Text="{Binding Plant.Species, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+
+        <!-- Сорт / разновидность -->
+        <TextBlock Grid.Row="8" Text="Сорт / разновидность" Margin="0,5"/>
+        <TextBox Grid.Row="9" Text="{Binding Plant.Variety, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+
+        <!-- Местоположение -->
+        <TextBlock Grid.Row="10" Text="Местоположение" Margin="0,5"/>
+        <TextBox Grid.Row="11" Text="{Binding Plant.Location, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+
+        <!-- Дата посадки -->
+        <TextBlock Grid.Row="12" Text="Дата посадки" Margin="0,5"/>
+        <DatePicker Grid.Row="13" SelectedDate="{Binding Plant.PlantingDate}" Margin="0,0,0,10"/>
+
+        <!-- Примечания -->
+        <TextBlock Grid.Row="14" Text="Примечания" Margin="0,5"/>
+        <TextBox Grid.Row="15" Text="{Binding Plant.Notes, UpdateSourceTrigger=PropertyChanged}" 
+                 Height="60" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,0,0,10"/>
+
+        <!-- Кнопки -->
+        <StackPanel Grid.Row="16" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button Content="Сохранить" Command="{Binding SaveCommand}" Width="80" Margin="0,0,10,0" IsDefault="True"/>
+            <Button Content="Отмена" IsCancel="True" Width="80"/>
+        </StackPanel>
+    </Grid>
+</Window>

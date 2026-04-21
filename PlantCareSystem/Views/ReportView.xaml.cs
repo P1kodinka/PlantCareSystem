@@ -5,9 +5,13 @@ namespace PlantCareSystem.Views
 {
     public partial class ReportView : UserControl
     {
-        public ReportView(ReportViewModel viewModel)
+        public ReportView()
         {
             InitializeComponent();
+        }
+
+        public ReportView(ReportViewModel viewModel) : this()
+        {
             DataContext = viewModel;
         }
     }

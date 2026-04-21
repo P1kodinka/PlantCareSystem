@@ -5,9 +5,13 @@ namespace PlantCareSystem.Views
 {
     public partial class PlantRegistryView : UserControl
     {
-        public PlantRegistryView(PlantListViewModel viewModel)
+        public PlantRegistryView()
         {
             InitializeComponent();
+        }
+
+        public PlantRegistryView(PlantListViewModel viewModel) : this()
+        {
             DataContext = viewModel;
         }
     }
