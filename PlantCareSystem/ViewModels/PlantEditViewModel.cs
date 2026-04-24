@@ -3,7 +3,6 @@ using CommunityToolkit.Mvvm.Input;
 using PlantCareSystem.Data;
 using PlantCareSystem.Models;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
@@ -17,6 +16,9 @@ namespace PlantCareSystem.ViewModels
         private readonly Window _window;
 
         [ObservableProperty]
+        [NotifyDataErrorInfo]
+        [Required(ErrorMessage = "Название обязательно")]
+        [MinLength(2, ErrorMessage = "Название должно содержать минимум 2 символа")]
         private string _name = string.Empty;
 
         [ObservableProperty]
@@ -43,12 +45,17 @@ namespace PlantCareSystem.ViewModels
         [ObservableProperty]
         private bool _isActive = true;
 
+        [ObservableProperty]
+        private bool _isRare = false;   // <-- новое
+
         private int? _plantId;
 
         public PlantEditViewModel(Plant? plant, AppDbContext dbContext, Window window)
         {
             _dbContext = dbContext;
             _window = window;
+
+            SaveCommand = new AsyncRelayCommand(SaveAsync, CanSave);
 
             if (plant != null)
             {
@@ -62,24 +69,18 @@ namespace PlantCareSystem.ViewModels
                 PlantingDate = plant.PlantingDate;
                 Notes = plant.Notes;
                 IsActive = plant.IsActive;
+                IsRare = plant.IsRare;   // <-- загрузка
             }
 
-            SaveCommand = new AsyncRelayCommand(SaveAsync, CanSave);
-
-            // Первичная валидация
             ValidateAllProperties();
             SaveCommand.NotifyCanExecuteChanged();
         }
 
         public IAsyncRelayCommand SaveCommand { get; }
 
-        partial void OnNameChanged(string value)
-        {
-            ValidateSingleProperty(value, nameof(Name));
-            SaveCommand.NotifyCanExecuteChanged();
-        }
-
         private bool CanSave() => !HasErrors;
+
+        partial void OnNameChanged(string value) => SaveCommand?.NotifyCanExecuteChanged();
 
         private async Task SaveAsync()
         {
@@ -87,8 +88,7 @@ namespace PlantCareSystem.ViewModels
             if (HasErrors)
             {
                 var firstError = GetErrors().FirstOrDefault()?.ErrorMessage ?? "Некорректные данные";
-                MessageBox.Show(firstError, "Ошибка валидации",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(firstError, "Ошибка валидации", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -115,6 +115,7 @@ namespace PlantCareSystem.ViewModels
                 plant.PlantingDate = PlantingDate;
                 plant.Notes = Notes;
                 plant.IsActive = IsActive;
+                plant.IsRare = IsRare;   // <-- сохранение
 
                 await _dbContext.SaveChangesAsync();
                 _window.DialogResult = true;
@@ -122,20 +123,8 @@ namespace PlantCareSystem.ViewModels
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка сохранения: {ex.Message}",
-                    "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Ошибка сохранения: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-        }
-
-        private void ValidateSingleProperty(object? value, string propertyName)
-        {
-            var context = new ValidationContext(this) { MemberName = propertyName };
-            var results = new List<ValidationResult>();
-            Validator.TryValidateProperty(value, context, results);
-
-            ClearErrors(propertyName);
-            foreach (var result in results)
-                AddError(result.ErrorMessage ?? "Ошибка", propertyName);
         }
     }
 }

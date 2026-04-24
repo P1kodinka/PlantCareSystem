@@ -1,7 +1,108 @@
 <UserControl x:Class="PlantCareSystem.Views.CareCalendarView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Grid>
-        <TextBlock Text="Календарь ухода (в разработке)" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:models="clr-namespace:PlantCareSystem.Models"
+             xmlns:converters="clr-namespace:PlantCareSystem.Converters">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Заголовок и управление месяцем -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+            <Button Content="&lt;" Command="{Binding PreviousMonthCommand}" Width="30" Margin="0,0,5,0"/>
+            <TextBlock Text="{Binding CurrentMonth, StringFormat='MMMM yyyy'}" FontSize="18" FontWeight="Bold" 
+                       VerticalAlignment="Center" Width="200"/>
+            <Button Content="&gt;" Command="{Binding NextMonthCommand}" Width="30" Margin="5,0,0,0"/>
+        </StackPanel>
+
+        <!-- Панель добавления операции -->
+        <Border Grid.Row="1" Background="#F5F5F5" Padding="10" Margin="0,0,0,10" CornerRadius="5">
+            <StackPanel>
+                <TextBlock Text="Добавить операцию" FontWeight="Bold" Margin="0,0,0,5"/>
+                <WrapPanel>
+                    <ComboBox ItemsSource="{Binding AllPlants}" SelectedItem="{Binding SelectedPlant}" 
+                              DisplayMemberPath="Name" Width="150" Margin="0,0,10,5"/>
+                    <ComboBox ItemsSource="{Binding OperationTypes}" SelectedItem="{Binding SelectedOperationType}" 
+                              Width="120" Margin="0,0,10,5"/>
+                    <DatePicker SelectedDate="{Binding SelectedDate}" Width="120" Margin="0,0,10,5"/>
+                    <Button Content="Добавить" Command="{Binding AddOperationCommand}" Width="80" Margin="0,0,10,5"/>
+                    <Button Content="Сгенерировать график" Command="{Binding GenerateScheduleCommand}" Width="150" Margin="0,0,10,5"/>
+                </WrapPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Сетка календаря -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding Days}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="7"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border BorderBrush="LightGray" BorderThickness="0.5" Padding="5" MinHeight="100"
+                                Background="{Binding Date, Converter={StaticResource DateToBackgroundConverter}}">
+                            <Border.InputBindings>
+                                <MouseBinding Gesture="LeftClick" Command="{Binding DataContext.SelectDayCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                              CommandParameter="{Binding}"/>
+                            </Border.InputBindings>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="{Binding Date.Day}" FontWeight="Bold" 
+                                           Foreground="{Binding Date, Converter={StaticResource DateToForegroundConverter}}"/>
+                                <ItemsControl Grid.Row="1" ItemsSource="{Binding Operations}" Margin="0,5,0,0">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type models:CareOperation}">
+                                            <Border Margin="1" Padding="3,1" CornerRadius="3" Cursor="Hand"
+                                                    Background="{Binding IsCompleted, Converter={StaticResource BoolToColorConverter}}">
+                                                <Border.ContextMenu>
+                                                    <ContextMenu>
+                                                        <MenuItem Header="✓ Выполнено" 
+                                                                  Command="{Binding DataContext.CompleteOperationCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                                  CommandParameter="{Binding}"
+                                                                  IsEnabled="{Binding IsCompleted, Converter={StaticResource InverseBoolConverter}}"/>
+                                                        <MenuItem Header="✗ Удалить" 
+                                                                  Command="{Binding DataContext.DeleteOperationCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                                  CommandParameter="{Binding}"/>
+                                                        <Separator/>
+                                                        <MenuItem Header="Свойства..." IsEnabled="False"/>
+                                                    </ContextMenu>
+                                                </Border.ContextMenu>
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding OperationType}" FontSize="10" FontWeight="Bold"/>
+                                                    <TextBlock Text="{Binding Plant.Name}" FontSize="9"/>
+                                                    <TextBlock Text="{Binding OperationDate, StringFormat='HH:mm'}" FontSize="8" 
+                                                               Visibility="{Binding IsCompleted, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <!-- Строка состояния -->
+        <StatusBar Grid.Row="3" Margin="0,5,0,0">
+            <StatusBarItem>
+                <TextBlock Text="{Binding SelectedDay.Date, StringFormat='Выбран: {0:d}'}"/>
+            </StatusBarItem>
+        </StatusBar>
     </Grid>
 </UserControl>

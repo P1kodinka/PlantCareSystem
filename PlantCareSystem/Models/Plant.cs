@@ -34,6 +34,7 @@ namespace PlantCareSystem.Models
         public string? Notes { get; set; }
 
         public bool IsActive { get; set; } = true;
+        public bool IsRare { get; set; } = false;   // <-- новое поле
 
         // Навигационные свойства
         public virtual ICollection<CareOperation> CareOperations { get; set; } = new List<CareOperation>();

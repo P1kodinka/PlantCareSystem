@@ -163,6 +163,9 @@ namespace PlantCareSystem.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsRare")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime?>("LastTransplantDate")
                         .HasColumnType("datetime2");
 

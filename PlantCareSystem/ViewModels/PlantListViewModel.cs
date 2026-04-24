@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using PlantCareSystem.Data;
 using PlantCareSystem.Models;
 using PlantCareSystem.Services;
@@ -9,7 +10,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
-using System.Numerics;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
@@ -18,9 +19,9 @@ namespace PlantCareSystem.ViewModels
 {
     public partial class PlantListViewModel : ObservableObject
     {
-        private readonly AppDbContext _dbContext;
-        private readonly INotificationService _notificationService;
         private readonly IServiceProvider _serviceProvider;
+        private readonly INotificationService _notificationService;
+        private readonly SemaphoreSlim _loadSemaphore = new(1, 1);
 
         [ObservableProperty]
         private ObservableCollection<Plant> _plants = new();
@@ -34,21 +35,20 @@ namespace PlantCareSystem.ViewModels
         [ObservableProperty]
         private bool _showInactive = false;
 
-        private ICollectionView _plantsView;
+        private ICollectionView? _plantsView;
+        private bool _isLoaded;
 
-        public ICollectionView PlantsView
+        public ICollectionView? PlantsView
         {
             get => _plantsView;
             private set => SetProperty(ref _plantsView, value);
         }
 
-        public PlantListViewModel(AppDbContext dbContext, INotificationService notificationService, IServiceProvider serviceProvider)
+        public PlantListViewModel(IServiceProvider serviceProvider, INotificationService notificationService)
         {
-            _dbContext = dbContext;
-            _notificationService = notificationService;
             _serviceProvider = serviceProvider;
+            _notificationService = notificationService;
 
-            // Команды
             LoadCommand = new AsyncRelayCommand(LoadPlantsAsync);
             AddCommand = new AsyncRelayCommand(AddPlantAsync);
             EditCommand = new AsyncRelayCommand(EditPlantAsync, () => SelectedPlant != null);
@@ -56,9 +56,6 @@ namespace PlantCareSystem.ViewModels
             ToggleActiveCommand = new AsyncRelayCommand(ToggleActiveAsync, () => SelectedPlant != null);
             RefreshCommand = new AsyncRelayCommand(LoadPlantsAsync);
             ApplyFilterCommand = new RelayCommand(ApplyFilter);
-
-            // Загружаем данные при создании
-            LoadCommand.Execute(null);
         }
 
         public IAsyncRelayCommand LoadCommand { get; }
@@ -69,11 +66,32 @@ namespace PlantCareSystem.ViewModels
         public IAsyncRelayCommand RefreshCommand { get; }
         public IRelayCommand ApplyFilterCommand { get; }
 
+        // При изменении выбранного растения уведомляем команды
+        partial void OnSelectedPlantChanged(Plant? value)
+        {
+            EditCommand.NotifyCanExecuteChanged();
+            DeleteCommand.NotifyCanExecuteChanged();
+            ToggleActiveCommand.NotifyCanExecuteChanged();
+        }
+
+        public async Task InitializeAsync()
+        {
+            if (!_isLoaded)
+            {
+                await LoadPlantsAsync();
+                _isLoaded = true;
+            }
+        }
+
         private async Task LoadPlantsAsync()
         {
+            await _loadSemaphore.WaitAsync();
             try
             {
-                var query = _dbContext.Plants.AsNoTracking();
+                using var scope = _serviceProvider.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                var query = dbContext.Plants.AsNoTracking();
                 if (!ShowInactive)
                     query = query.Where(p => p.IsActive);
 
@@ -81,12 +99,19 @@ namespace PlantCareSystem.ViewModels
                 Plants = new ObservableCollection<Plant>(plantsFromDb);
 
                 PlantsView = CollectionViewSource.GetDefaultView(Plants);
-                PlantsView.Filter = FilterPlants;
+                if (PlantsView != null)
+                {
+                    PlantsView.Filter = FilterPlants;
+                }
                 ApplyFilter();
             }
             catch (Exception ex)
             {
                 _notificationService.ShowNotification("Ошибка загрузки", $"Не удалось загрузить список растений: {ex.Message}");
+            }
+            finally
+            {
+                _loadSemaphore.Release();
             }
         }
 
@@ -109,11 +134,13 @@ namespace PlantCareSystem.ViewModels
         }
 
         partial void OnSearchTextChanged(string value) => ApplyFilter();
-        partial void OnShowInactiveChanged(bool value) => LoadCommand.Execute(null);
+        partial void OnShowInactiveChanged(bool value) => _ = LoadPlantsAsync();
 
         private async Task AddPlantAsync()
         {
-            var dialog = new PlantEditWindow(null, _dbContext);
+            using var scope = _serviceProvider.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var dialog = new PlantEditWindow(null, dbContext);
             dialog.Owner = Application.Current.MainWindow;
             if (dialog.ShowDialog() == true)
             {
@@ -125,11 +152,12 @@ namespace PlantCareSystem.ViewModels
         private async Task EditPlantAsync()
         {
             if (SelectedPlant == null) return;
-            // Загружаем полную сущность для редактирования (т.к. AsNoTracking)
-            var plantToEdit = await _dbContext.Plants.FindAsync(SelectedPlant.Id);
+            using var scope = _serviceProvider.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var plantToEdit = await dbContext.Plants.FindAsync(SelectedPlant.Id);
             if (plantToEdit == null) return;
 
-            var dialog = new PlantEditWindow(plantToEdit, _dbContext);
+            var dialog = new PlantEditWindow(plantToEdit, dbContext);
             dialog.Owner = Application.Current.MainWindow;
             if (dialog.ShowDialog() == true)
             {
@@ -149,11 +177,13 @@ namespace PlantCareSystem.ViewModels
 
             try
             {
-                var plant = await _dbContext.Plants.FindAsync(SelectedPlant.Id);
+                using var scope = _serviceProvider.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var plant = await dbContext.Plants.FindAsync(SelectedPlant.Id);
                 if (plant != null)
                 {
-                    _dbContext.Plants.Remove(plant);
-                    await _dbContext.SaveChangesAsync();
+                    dbContext.Plants.Remove(plant);
+                    await dbContext.SaveChangesAsync();
                     await LoadPlantsAsync();
                     _notificationService.ShowNotification("Успех", "Растение удалено.");
                 }
@@ -169,11 +199,13 @@ namespace PlantCareSystem.ViewModels
             if (SelectedPlant == null) return;
             try
             {
-                var plant = await _dbContext.Plants.FindAsync(SelectedPlant.Id);
+                using var scope = _serviceProvider.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var plant = await dbContext.Plants.FindAsync(SelectedPlant.Id);
                 if (plant != null)
                 {
                     plant.IsActive = !plant.IsActive;
-                    await _dbContext.SaveChangesAsync();
+                    await dbContext.SaveChangesAsync();
                     await LoadPlantsAsync();
                 }
             }

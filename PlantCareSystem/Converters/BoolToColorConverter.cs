@@ -10,9 +10,7 @@ namespace PlantCareSystem.Converters
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value is bool boolValue)
-            {
-                return boolValue ? new SolidColorBrush(Colors.Green) : new SolidColorBrush(Colors.Red);
-            }
+                return boolValue ? new SolidColorBrush(Colors.LightGreen) : new SolidColorBrush(Colors.LightCoral);
             return new SolidColorBrush(Colors.Gray);
         }
 

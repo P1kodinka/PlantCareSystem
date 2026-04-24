@@ -37,6 +37,11 @@ namespace PlantCareSystem.ViewModels
                 "Reports" => _serviceProvider.GetRequiredService<ReportView>(),
                 _ => CurrentView
             };
+
+            if (CurrentView?.DataContext is PlantListViewModel plantVm)
+                _ = plantVm.InitializeAsync();
+            else if (CurrentView?.DataContext is CalendarViewModel calVm)
+                _ = calVm.InitializeAsync();
         }
     }
 }

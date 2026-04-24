@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Windows;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -16,7 +17,7 @@ namespace PlantCareSystem
 
         public IConfiguration? Configuration { get; private set; }
 
-        protected override void OnStartup(StartupEventArgs e)
+        protected override async void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
 
@@ -39,14 +40,21 @@ namespace PlantCareSystem
 
             var mainWindow = ServiceProvider.GetRequiredService<MainWindow>();
             mainWindow.Show();
+            var notificationService = ServiceProvider.GetRequiredService<INotificationService>();
+            await notificationService.CheckAndNotifyAsync();
         }
 
         private void ConfigureServices(IServiceCollection services)
         {
+            // Получаем строку подключения и проверяем, что она не null
+            var connectionString = Configuration?.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException("Строка подключения 'DefaultConnection' не найдена в конфигурации.");
+
             // DbContext
             services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
-
+                options.UseSqlServer(connectionString), ServiceLifetime.Transient);
+            services.AddSingleton<IServiceScopeFactory>(provider =>
+                provider.GetRequiredService<IServiceScopeFactory>());
             // Repositories (пока generic, позже уточним)
             services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 
@@ -67,6 +75,11 @@ namespace PlantCareSystem
             services.AddTransient<CareCalendarView>();
             services.AddTransient<ReportView>();
             services.AddTransient<PlantEditWindow>();
+            services.AddScoped<ICareCalculationService, CareCalculationService>();
+            services.AddTransient<CalendarViewModel>();
+            services.AddTransient<CareCalendarView>();
+            services.AddScoped<IExportService, ExportService>();
+            services.AddTransient<ReportViewModel>();
         }
     }
 }
